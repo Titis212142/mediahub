@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Résultats de recherche</title>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: #1e1e2f;
+        color: white;
+        padding: 30px;
+      }
+      h1 {
+        color: #c9c9ff;
+      }
+      .result-box {
+        background-color: #2f2f44;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      a {
+        color: #c9c9ff;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Résultats pour "{{ query }}"</h1>
+
+    {% if users %}
+    <h2>Utilisateurs</h2>
+    {% for user in users %}
+    <div class="result-box">👤 <strong>{{ user.username }}</strong></div>
+    {% endfor %} {% endif %} {% if posts %}
+    <h2>Publications</h2>
+    {% for post in posts %}
+    <div class="result-box">
+      <strong>{{ post.author.username }}</strong> : {{ post.content }}
+    </div>
+    {% endfor %} {% endif %} {% if not users and not posts %}
+    <p>Aucun résultat trouvé.</p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">← Retour</a>
+  </body>
+</html>

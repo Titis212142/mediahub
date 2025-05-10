@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Défi du mois – MediaHub</title>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: #1e1e2f;
+        color: white;
+        padding: 30px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #c9c9ff;
+      }
+
+      .challenge-box,
+      .submission-form,
+      .submission-card {
+        background-color: #2f2f44;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+      }
+
+      textarea,
+      input[type="file"] {
+        width: 100%;
+        margin-top: 10px;
+        margin-bottom: 15px;
+        padding: 12px;
+        font-size: 15px;
+        border-radius: 6px;
+        border: none;
+        background-color: #44445c;
+        color: #fff;
+      }
+
+      button {
+        background-color: #6c63ff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 16px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #4a42d4;
+      }
+
+      img {
+        max-width: 100%;
+        max-height: 400px;
+        margin-top: 10px;
+        border-radius: 8px;
+      }
+
+      .vote-count {
+        margin-top: 5px;
+        font-size: 14px;
+        color: #ccc;
+      }
+
+      .user-label {
+        font-weight: bold;
+        margin-bottom: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Défi du mois</h1>
+
+    <div class="challenge-box">
+      <h2>{{ challenge.title }}</h2>
+      <p>{{ challenge.description }}</p>
+    </div>
+
+    <div class="submission-form">
+      <h3>Participer au défi</h3>
+      <form method="POST" enctype="multipart/form-data">
+        <textarea
+          name="content"
+          placeholder="Ta participation..."
+          required
+        ></textarea>
+        <input type="file" name="image" accept="image/*" />
+        <button type="submit">Soumettre ma participation</button>
+      </form>
+    </div>
+
+    <h3>Participations</h3>
+    {% for submission in submissions %}
+    <div class="submission-card">
+      <div class="user-label">
+        {{ submission.user_id == user.id and 'Moi' or 'Utilisateur #' +
+        submission.user_id|string }}
+      </div>
+      <p>{{ submission.content }}</p>
+
+      {% if submission.image_filename %}
+      <img
+        src="{{ url_for('static', filename='uploads/' + submission.image_filename) }}"
+        alt="Image de la participation"
+      />
+      {% endif %}
+
+      <form
+        method="POST"
+        action="{{ url_for('vote_submission', submission_id=submission.id) }}"
+      >
+        {% set voted = votes | selectattr("submission_id", "equalto",
+        submission.id) | selectattr("user_id", "equalto", user.id) | list |
+        length > 0 %}
+        <button type="submit">
+          {% if voted %} ✅ Vote enregistré {% else %} 🗳 Voter {% endif %}
+        </button>
+      </form>
+
+      <div class="vote-count">
+        {{ votes | selectattr("submission_id", "equalto", submission.id) | list
+        | length }} vote(s)
+      </div>
+    </div>
+    {% else %}
+    <p>Aucune participation pour le moment.</p>
+    {% endfor %}
+  </body>
+</html>

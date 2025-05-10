@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MediaHub – Mur</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(135deg, #1e1e2f, #272740);
+        color: #fff;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+      }
+      aside {
+        width: 180px;
+        margin-right: 30px;
+      }
+      .sidebar {
+        background-color: #2f2f44;
+        border-radius: 12px;
+        padding: 20px;
+        position: sticky;
+        top: 20px;
+      }
+      .sidebar h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+      }
+      .sidebar a {
+        display: block;
+        margin-top: 10px;
+        text-decoration: none;
+        color: #c9c9ff;
+        font-weight: bold;
+      }
+      .sidebar a:hover {
+        color: white;
+      }
+      .feed {
+        flex: 1;
+        max-width: 800px;
+      }
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+      .top-bar h1 {
+        font-size: 24px;
+      }
+      .logout {
+        font-size: 14px;
+      }
+      .logout a {
+        color: #c9c9ff;
+        text-decoration: none;
+        margin-left: 10px;
+      }
+      .logout a:hover {
+        color: white;
+      }
+      .post-form,
+      .comment-form {
+        background-color: #2f2f44;
+        padding: 50px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+      }
+      textarea,
+      input[type="file"] {
+        width: 100%;
+        margin-bottom: 15px;
+        padding: 12px;
+        font-size: 15px;
+        border-radius: 8px;
+        border: none;
+        background-color: #44445c;
+        color: #fff;
+        resize: none;
+      }
+      button {
+        background-color: #6c63ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #5751d9;
+      }
+      .post-card {
+        background-color: #2f2f44;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      }
+      .post-header {
+        padding: 12px 16px;
+        font-weight: bold;
+        border-bottom: 1px solid #3a3a57;
+        display: flex;
+        justify-content: space-between;
+      }
+      .post-tools button,
+      .post-tools a {
+        background: none;
+        border: none;
+        color: #bbb;
+        font-size: 14px;
+        cursor: pointer;
+        margin-left: 10px;
+        text-decoration: none;
+      }
+      .post-tools button:hover,
+      .post-tools a:hover {
+        color: #fff;
+      }
+      .post-image img {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+      }
+      .post-content {
+        padding: 16px;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .post-actions {
+        padding: 0 16px 10px;
+        font-size: 18px;
+        color: #c9c9ff;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .comments {
+        padding: 10px 16px 0;
+        border-top: 1px solid #3a3a57;
+      }
+      .comment {
+        margin-top: 8px;
+        padding: 6px 0;
+        border-bottom: 1px dotted #444;
+      }
+      .comment .tools {
+        float: right;
+      }
+      .icon-btn {
+        background: none;
+        border: none;
+        color: #aaa;
+        font-size: 14px;
+        cursor: pointer;
+        margin-left: 6px;
+        text-decoration: none;
+      }
+      .icon-btn:hover {
+        color: #fff;
+      }
+      input[type="file"]::file-selector-button {
+        background: #6c63ff;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        margin-right: 10px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(135deg, #1e1e2f, #272740);
+        color: #fff;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+      }
+
+      body.light-mode {
+        background: #f5f5ff;
+        color: #222;
+      }
+
+      body.light-mode .sidebar,
+      body.light-mode .post-form,
+      body.light-mode .comment-form,
+      body.light-mode .post-card {
+        background-color: #ffffff;
+        color: #222;
+      }
+
+      body.light-mode textarea,
+      body.light-mode input[type="file"] {
+        background-color: #ddd;
+        color: #000;
+      }
+
+      body.light-mode .sidebar a {
+        color: #3333cc;
+      }
+
+      .mode-toggle {
+        position: fixed;
+        top: 20px;
+        right: 30px;
+        background-color: #6c63ff;
+        color: white;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 999;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="mode-toggle" onclick="toggleMode()">
+      🌗 Mode clair/sombre
+    </button>
+
+    <aside>
+      <div class="sidebar">
+        <h3>Navigation</h3>
+        <a href="{{ url_for('index') }}">🏠 Mur</a>
+        <a href="{{ url_for('conditions') }}">📜 Conditions Générales</a>
+        {% if user.is_admin %}
+        <a href="{{ url_for('admin_panel') }}">⚙️ Admin</a>
+        <a href="{{ url_for('moderation_logs') }}">🚨 Modération</a>
+        {% endif %}
+        <form
+          action="{{ url_for('search') }}"
+          method="get"
+          style="margin-bottom: 20px"
+        >
+          <input
+            type="text"
+            name="q"
+            placeholder="🔍 Rechercher..."
+            style="
+              width: 100%;
+              padding: 8px;
+              border-radius: 8px;
+              border: none;
+              background-color: #44445c;
+              color: white;
+              margin-top: 20px;
+            "
+          />
+        </form>
+      </div>
+    </aside>
+
+    <div class="feed">
+      <div class="top-bar">
+        <h1>MediaHub</h1>
+        <div class="logout">
+          Connecté en tant que <strong>{{ user.username }}</strong>
+          <a href="{{ url_for('logout') }}">Déconnexion</a>
+        </div>
+      </div>
+
+      <form class="post-form" method="POST" enctype="multipart/form-data">
+        <textarea
+          name="content"
+          placeholder="Exprime-toi ici..."
+          required
+        ></textarea>
+        <input
+          type="file"
+          name="image"
+          accept="image/*,video/mp4,video/webm,image/webp"
+        />
+        <button type="submit">Publier</button>
+      </form>
+
+      {% for post in posts %}
+      <div class="post-card">
+        <div class="post-header">
+          <div style="display: flex; align-items: center; gap: 12px">
+            {% if post.author.profile_picture %}
+            <img
+              src="{{ url_for('static', filename='uploads/' + post.author.profile_picture) }}"
+              alt="PP"
+              style="width: 40px; height: 40px; border-radius: 50%"
+            />
+            {% endif %}
+            <div>
+              <a
+                href="{{ url_for('user_profile', username=post.author.username) }}"
+                style="color: #c9c9ff; text-decoration: none"
+              >
+                {{ post.author.username }}
+              </a>
+              {% if post.author.id != user.id %}
+              <form
+                action="{{ url_for('follow', user_id=post.author.id) }}"
+                method="POST"
+                style="margin-top: 5px"
+              >
+                {% set is_following = followings | selectattr("followed_id",
+                "equalto", post.author.id) | list | length > 0 %}
+                <button
+                  type="submit"
+                  style="font-size: 12px; padding: 4px 10px; border-radius: 6px"
+                >
+                  {% if is_following %}Se désabonner{% else %}Suivre{% endif %}
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if post.user_id == user.id %}
+          <span class="post-tools">
+            <form
+              method="POST"
+              action="{{ url_for('delete_post', post_id=post.id) }}"
+              style="display: inline"
+            >
+              <button type="submit" title="Supprimer">🗑</button>
+            </form>
+            <a
+              href="{{ url_for('edit_post', post_id=post.id) }}"
+              title="Modifier"
+              >✏️</a
+            >
+          </span>
+          {% endif %}
+        </div>
+
+        {% if post.image_filename %}
+        <div class="post-image">
+          {% if post.image_filename.endswith('.mp4') or
+          post.image_filename.endswith('.webm') %}
+          <video
+            controls
+            style="width: 100%; max-height: 400px; border-radius: 8px"
+          >
+            <source
+              src="{{ url_for('static', filename='uploads/' + post.image_filename) }}"
+              type="video/mp4"
+            />
+            Votre navigateur ne prend pas en charge les vidéos HTML5.
+          </video>
+          {% else %}
+          <img
+            src="{{ url_for('static', filename='uploads/' + post.image_filename) }}"
+            alt="Image"
+            style="
+              width: 100%;
+              max-height: 400px;
+              object-fit: cover;
+              border-radius: 8px;
+            "
+          />
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="post-content">{{ post.content | render_mentions }}</div>
+
+        <div class="post-actions">
+          {% set post_likes = likes | selectattr("post_id", "equalto", post.id)
+          | list %} {% set liked_by_user = post_likes | selectattr("user_id",
+          "equalto", user.id) | list | length > 0 %}
+          <form action="{{ url_for('like', post_id=post.id) }}" method="POST">
+            <button
+              type="submit"
+              style="
+                background: none;
+                border: none;
+                color: #c9c9ff;
+                font-size: 18px;
+                cursor: pointer;
+              "
+            >
+              {% if liked_by_user %} ❤️ {% else %} 🤍 {% endif %}
+            </button>
+          </form>
+          <span>{{ post_likes | length }} likes</span>
+        </div>
+
+        <div class="comments">
+          {% for comment in comments if comment.post_id == post.id %}
+          <div class="comment">
+            <strong>
+              {{ comment.user_id == user.id and 'Moi' or 'Utilisateur #' +
+              comment.user_id|string }}
+            </strong>
+            : {{ comment.content | render_mentions }} {% if comment.user_id ==
+            user.id %}
+            <span class="tools">
+              <form
+                method="POST"
+                action="{{ url_for('delete_comment', comment_id=comment.id) }}"
+                style="display: inline"
+              >
+                <button type="submit" class="icon-btn" title="Supprimer">
+                  🗑
+                </button>
+              </form>
+              <a
+                href="{{ url_for('edit_comment', comment_id=comment.id) }}"
+                class="icon-btn"
+                title="Modifier"
+                >✏️</a
+              >
+            </span>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <form
+            class="comment-form"
+            method="POST"
+            action="{{ url_for('add_comment', post_id=post.id) }}"
+          >
+            <textarea
+              name="comment"
+              placeholder="Ajouter un commentaire..."
+              required
+            ></textarea>
+            <button type="submit">Commenter</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </body>
+</html>
+<script>
+  function toggleMode() {
+    document.body.classList.toggle("light-mode");
+    localStorage.setItem(
+      "theme",
+      document.body.classList.contains("light-mode") ? "light" : "dark"
+    );
+  }
+
+  // Appliquer le thème au chargement
+  window.onload = () => {
+    if (localStorage.getItem("theme") === "light") {
+      document.body.classList.add("light-mode");
+    }
+  };
+</script>

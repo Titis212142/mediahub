@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Inscription – MediaHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(135deg, #1e1e2f, #272740);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .register-box {
+        background-color: #2f2f44;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        width: 100%;
+        max-width: 400px;
+        box-sizing: border-box;
+      }
+
+      .register-box h2 {
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      input[type="text"],
+      input[type="password"],
+      input[type="file"] {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0 20px 0;
+        border: none;
+        border-radius: 8px;
+        background-color: #44445c;
+        color: #fff;
+        font-size: 16px;
+      }
+
+      input[type="file"] {
+        background-color: transparent;
+        padding: 0;
+        border: none;
+      }
+
+      input[type="file"]::file-selector-button {
+        background-color: #6c63ff;
+        color: white;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+
+      input:focus {
+        outline: 2px solid #6c63ff;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #6c63ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      button:hover {
+        background-color: #5751d9;
+      }
+
+      .link {
+        margin-top: 16px;
+        text-align: center;
+      }
+
+      .link a {
+        color: #c9c9ff;
+        text-decoration: none;
+      }
+
+      .link a:hover {
+        text-decoration: underline;
+      }
+
+      .flash {
+        background: #ff6666;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .avatar-label {
+        font-size: 14px;
+        margin-bottom: 6px;
+        color: #ccc;
+      }
+
+      .terms {
+        font-size: 13px;
+        color: #ccc;
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+      }
+
+      .terms a {
+        color: #c9c9ff;
+        text-decoration: underline;
+      }
+
+      .terms a:hover {
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="register-box">
+      <h2>Créer un compte</h2>
+
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <div class="flash">{{ messages[0] }}</div>
+      {% endif %} {% endwith %}
+
+      <form method="POST" enctype="multipart/form-data">
+        <input
+          type="text"
+          name="username"
+          placeholder="Nom d'utilisateur"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Mot de passe"
+          required
+        />
+        <label class="avatar-label">Photo de profil (facultatif)</label>
+        <input type="file" name="profile_picture" accept="image/*" />
+
+        <div class="terms">
+          En cliquant sur <strong>« S'inscrire »</strong>, vous acceptez nos
+          <a href="{{ url_for('conditions') }}">Conditions d'utilisation</a>.
+        </div>
+
+        <button type="submit">S'inscrire</button>
+      </form>
+
+      <div class="link">
+        Déjà inscrit ? <a href="{{ url_for('login') }}">Se connecter</a>
+      </div>
+    </div>
+  </body>
+</html>

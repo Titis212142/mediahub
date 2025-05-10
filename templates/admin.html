@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Panneau Admin – MediaHub</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #1e1e2f;
+        color: white;
+        padding: 20px;
+      }
+
+      h1,
+      h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      form {
+        margin-top: 20px;
+        margin-bottom: 30px;
+      }
+
+      input[type="text"] {
+        padding: 8px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: none;
+        margin-right: 10px;
+      }
+
+      button {
+        padding: 8px 14px;
+        font-size: 14px;
+        border: none;
+        border-radius: 6px;
+        background-color: #6c63ff;
+        color: white;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #4a42d4;
+      }
+
+      ul {
+        margin-top: 10px;
+        list-style: none;
+        padding: 0;
+      }
+
+      li {
+        margin-bottom: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #444;
+        text-align: left;
+      }
+
+      th {
+        background-color: #2f2f44;
+      }
+
+      tr:hover {
+        background-color: #33334d;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Panneau d'administration</h1>
+
+    <form method="POST" action="{{ url_for('admin_ban') }}">
+      <label for="ip">Bannir une IP :</label>
+      <input
+        type="text"
+        name="ip"
+        id="ip"
+        placeholder="Ex: 123.45.67.89"
+        required
+      />
+      <button type="submit">Bannir</button>
+    </form>
+
+    <h2>Liste des utilisateurs :</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nom d'utilisateur</th>
+          <th>Rôle</th>
+          <th>Dernière IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.username }}</td>
+          <td>{% if user.is_admin %}Admin{% else %}Utilisateur{% endif %}</td>
+          <td>{{ user.last_ip or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Liste des IP bannies :</h2>
+    <ul>
+      {% for ip in banned_ips %}
+      <li>{{ ip.ip_address }}</li>
+      {% else %}
+      <li>Aucune IP bannie pour le moment.</li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>

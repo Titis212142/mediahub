@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Modération – MediaHub</title>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #1e1e2f;
+        color: white;
+        padding: 30px;
+      }
+
+      h1 {
+        color: #c9c9ff;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #444;
+        text-align: left;
+      }
+
+      th {
+        background-color: #2f2f44;
+      }
+
+      tr:hover {
+        background-color: #2a2a3d;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-top: 20px;
+        color: #c9c9ff;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Journal de modération</h1>
+
+    {% if logs %}
+    <table>
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Type</th>
+          <th>Contenu détecté</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.user.username if log.user else 'Inconnu' }}</td>
+          <td>{{ log.source }}</td>
+          <td>{{ log.content }}</td>
+          <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>Aucune tentative de contenu interdit enregistrée.</p>
+    {% endif %}
+
+    <a class="back-link" href="{{ url_for('admin_panel') }}"
+      >← Retour au panneau admin</a
+    >
+  </body>
+</html>
