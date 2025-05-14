@@ -318,7 +318,7 @@
             </div>
           </div>
 
-          {% if post.user_id == user.id %}
+          {% if post.user_id == user.id or user.is_admin %}
           <span class="post-tools">
             <form
               method="POST"
@@ -356,11 +356,14 @@
             alt="Image"
             style="
               width: 100%;
-              max-height: 400px;
-              object-fit: cover;
+              max-height: 600px;
+              object-fit: contain;
               border-radius: 8px;
+              display: block;
+              margin: auto;
             "
           />
+
           {% endif %}
         </div>
         {% endif %}

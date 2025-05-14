@@ -64,6 +64,10 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    ip = request.remote_addr
+    if BannedIP.query.filter_by(ip_address=ip).first():
+        return "Accès interdit – IP bannie.", 403
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -118,8 +122,40 @@ def admin_ban():
     if ip and not BannedIP.query.filter_by(ip_address=ip).first():
         db.session.add(BannedIP(ip_address=ip))
         db.session.commit()
+        print("IP bannie :", ip)  # ✅ Ajout utile pour debug
         flash(f"IP {ip} bannie.")
     return redirect(url_for('admin_panel'))
+
+
+# 🔽 AJOUTE LA ROUTE ICI 🔽
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if not current_user.is_admin:
+        return "Accès refusé", 403
+
+    user_to_delete = User.query.get_or_404(user_id)
+
+    if user_to_delete.id == current_user.id:
+        flash("Tu ne peux pas supprimer ton propre compte.")
+        return redirect(url_for('admin_panel'))
+
+    Post.query.filter_by(user_id=user_id).delete()
+    Comment.query.filter_by(user_id=user_id).delete()
+    Like.query.filter_by(user_id=user_id).delete()
+    Follow.query.filter_by(follower_id=user_id).delete()
+    Follow.query.filter_by(followed_id=user_id).delete()
+    ModerationLog.query.filter_by(user_id=user_id).delete()
+
+    db.session.delete(user_to_delete)
+    db.session.commit()
+    flash("Utilisateur supprimé avec succès.")
+    return redirect(url_for('admin_panel'))
+
+
+
+
 
 @app.route('/admin/moderation')
 @login_required
@@ -135,6 +171,10 @@ def moderation_logs():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
+    ip = request.remote_addr
+    if BannedIP.query.filter_by(ip_address=ip).first():
+        return "Accès interdit – IP bannie.", 403
+
     if request.method == 'POST':
         content = request.form.get('content')
         if contains_banned_words(content):

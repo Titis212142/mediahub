@@ -18,7 +18,7 @@
       }
 
       form {
-        margin-top: 20px;
+        margin-top: 10px;
         margin-bottom: 30px;
       }
 
@@ -44,16 +44,6 @@
         background-color: #4a42d4;
       }
 
-      ul {
-        margin-top: 10px;
-        list-style: none;
-        padding: 0;
-      }
-
-      li {
-        margin-bottom: 8px;
-      }
-
       table {
         width: 100%;
         border-collapse: collapse;
@@ -73,6 +63,14 @@
 
       tr:hover {
         background-color: #33334d;
+      }
+
+      .danger-btn {
+        background-color: #e74c3c;
+      }
+
+      .danger-btn:hover {
+        background-color: #c0392b;
       }
     </style>
   </head>
@@ -98,6 +96,7 @@
           <th>Nom d'utilisateur</th>
           <th>Rôle</th>
           <th>Dernière IP</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -106,6 +105,18 @@
           <td>{{ user.username }}</td>
           <td>{% if user.is_admin %}Admin{% else %}Utilisateur{% endif %}</td>
           <td>{{ user.last_ip or '—' }}</td>
+          <td>
+            {% if user.id != current_user.id %}
+            <form
+              method="POST"
+              action="{{ url_for('delete_user', user_id=user.id) }}"
+              style="display: inline"
+              onsubmit="return confirm('Supprimer ce compte ?')"
+            >
+              <button type="submit" class="danger-btn">🗑 Supprimer</button>
+            </form>
+            {% else %} (moi) {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
