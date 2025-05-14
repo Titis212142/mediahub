@@ -213,10 +213,11 @@ def index():
 @login_required
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
-    if post.user_id == current_user.id:
+    if post.user_id == current_user.id or current_user.is_admin:
         db.session.delete(post)
         db.session.commit()
     return redirect(url_for('index'))
+
 
 @app.route('/post/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required
