@@ -1,22 +1,28 @@
 import os
+import secrets
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta
 from models import db, User, Post, Like, Comment, Challenge, Submission, Vote, BannedIP, ModerationLog, Follow
 import re
 from markupsafe import Markup
 from datetime import datetime
+
 def render_mentions(text):
     pattern = r'@(\w+)'
     return Markup(re.sub(pattern, r'<a href="/user/\1" style="color:#6c63ff;">@\1</a>', text))
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mediahub_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mediahub.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///mediahub.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 app.permanent_session_lifetime = timedelta(days=7)
-app.jinja_env.filters['render_mentions'] = render_mentions  # ❌ ERREUR ici
+app.jinja_env.filters['render_mentions'] = render_mentions
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -366,5 +372,7 @@ def follow(user_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    port = int(os.environ.get('PORT', 8000))
+    app.run(debug=debug, host='0.0.0.0', port=port)
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=MediaHub Flask Application
+After=network.target
+
+[Service]
+User=mediahub
+Group=mediahub
+WorkingDirectory=/opt/mediahub
+Environment="PATH=/opt/mediahub/venv/bin"
+EnvironmentFile=/opt/mediahub/.env
+ExecStart=/opt/mediahub/venv/bin/gunicorn app:app --bind 127.0.0.1:8000 --workers 3 --timeout 120
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
