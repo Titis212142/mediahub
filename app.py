@@ -3,6 +3,7 @@ import secrets
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta
 from models import db, User, Post, Like, Comment, Challenge, Submission, Vote, BannedIP, ModerationLog, Follow
@@ -68,7 +69,7 @@ def login():
 
     if request.method == 'POST':
         user = User.query.filter_by(username=request.form['username']).first()
-        if user and user.password == request.form['password']:
+        if user and check_password_hash(user.password, request.form['password']):
             session.permanent = True
             login_user(user, remember=True)
             user.last_ip = ip
@@ -99,7 +100,7 @@ def register():
 
         user = User(
             username=username,
-            password=password,
+            password=generate_password_hash(password),
             last_ip=request.remote_addr,
             profile_picture=filename
         )
