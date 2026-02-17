@@ -16,21 +16,30 @@ def render_mentions(text):
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///mediahub.db')
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+default_db = 'sqlite:///' + os.path.join(BASE_DIR, 'mediahub.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', default_db)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 app.permanent_session_lifetime = timedelta(days=7)
 app.jinja_env.filters['render_mentions'] = render_mentions
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+with app.app_context():
+    db.create_all()
 
 BANNED_WORDS = [
     "con", "connard", "connasse", "merde", "putain", "pute", "salope", "enculé",
@@ -370,8 +379,6 @@ def follow(user_id):
 
 # --- Lancement ---
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
     port = int(os.environ.get('PORT', 8000))
     app.run(debug=debug, host='0.0.0.0', port=port)
