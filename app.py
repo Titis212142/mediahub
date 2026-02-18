@@ -331,10 +331,11 @@ def index():
     posts = unique_posts[start:start + POSTS_PER_PAGE]
     has_next = start + POSTS_PER_PAGE < total
 
-    # Active stories (< 24h)
+    # Active stories (< 24h) from people we follow + ourselves
     story_cutoff = datetime.utcnow() - timedelta(hours=24)
     stories_users = db.session.query(User).join(Story).filter(
-        Story.created_at > story_cutoff
+        Story.created_at > story_cutoff,
+        User.id.in_(followed_ids + [current_user.id])
     ).distinct().all()
 
     bookmark_ids = [b.post_id for b in Bookmark.query.filter_by(user_id=current_user.id).all()]
