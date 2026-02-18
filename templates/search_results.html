@@ -34,17 +34,27 @@
     {% if users %}
     <h2>Utilisateurs</h2>
     {% for user in users %}
-    <div class="result-box">👤 <strong>{{ user.username }}</strong></div>
-    {% endfor %} {% endif %} {% if posts %}
+    <div class="result-box">
+      👤 <a href="{{ url_for('user_profile', username=user.username) }}"><strong>{{ user.username }}</strong></a>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if posts %}
     <h2>Publications</h2>
     {% for post in posts %}
     <div class="result-box">
-      <strong>{{ post.author.username }}</strong> : {{ post.content }}
+      <a href="{{ url_for('user_profile', username=post.author.username) }}"><strong>{{ post.author.username }}</strong></a>
+      : {{ post.content | render_mentions }}
     </div>
-    {% endfor %} {% endif %} {% if not users and not posts %}
-    <p>Aucun résultat trouvé.</p>
+    {% endfor %}
+    {% endif %}
+
+    {% if not users and not posts %}
+    <p>Aucun resultat trouve.</p>
     {% endif %}
 
     <a href="{{ url_for('index') }}">← Retour</a>
+    <script src="{{ url_for('static', filename='fingerprint.js') }}"></script>
   </body>
 </html>

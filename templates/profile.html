@@ -62,17 +62,64 @@
         margin-top: 40px;
       }
 
-      .post {
-        background: #2f2f44;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
+      .posts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
       }
 
-      .post img {
-        max-width: 100%;
-        border-radius: 8px;
-        margin-top: 10px;
+      .post-card {
+        background: #2f2f44;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.2s;
+      }
+
+      .post-card:hover {
+        transform: scale(1.02);
+      }
+
+      .post-card .post-img-wrap {
+        width: 100%;
+        aspect-ratio: 1;
+        overflow: hidden;
+        background: #1e1e2f;
+      }
+
+      .post-card .post-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .post-card .post-text {
+        padding: 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        max-height: 80px;
+        overflow: hidden;
+      }
+
+      .post-card.text-only {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .post-card.text-only .post-text {
+        max-height: none;
+        font-size: 15px;
+      }
+
+      @media (max-width: 600px) {
+        .posts-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
       }
 
       .back-link {
@@ -82,57 +129,104 @@
         font-weight: bold;
         text-decoration: none;
       }
-
-      .back-link:hover {
-        text-decoration: underline;
+      .back-link:hover { text-decoration: underline; }
+      .bio { color: #ccc; font-size: 14px; margin-top: 6px; max-width: 400px; }
+      .profile-actions { display: flex; gap: 10px; margin-top: 10px; }
+      .profile-actions button, .profile-actions a {
+        background: #6c63ff; border: none; padding: 8px 18px; border-radius: 8px;
+        color: white; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px;
       }
+      .profile-actions button:hover, .profile-actions a:hover { background: #5751d9; }
     </style>
   </head>
   <body>
     <div class="profile-header">
-      <img
-        src="{{ url_for('static', filename='uploads/' + user_profile.profile_picture) if user_profile.profile_picture else url_for('static', filename='default_pp.png') }}"
-        alt="PP"
-      />
+      {% if user_profile.profile_picture %}
+      <img src="{{ url_for('static', filename='uploads/' + user_profile.profile_picture) }}" alt="PP" />
+      {% else %}
+      <div style="width:100px;height:100px;border-radius:50%;background:#6c63ff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:bold;border:2px solid #6c63ff;">
+        {{ user_profile.username[0] | upper }}
+      </div>
+      {% endif %}
       <div class="profile-info">
         <h1>@{{ user_profile.username }}</h1>
-        <p>
-          {{ follower_count }} abonné(s) · {{ following_count }} abonnement(s)
-        </p>
-
-        {% if current_user.id != user_profile.id %}
-        <div class="follow-btn">
-          <form
-            action="{{ url_for('follow', user_id=user_profile.id) }}"
-            method="POST"
-          >
-            <button type="submit">
-              {% if is_following %}Se désabonner{% else %}Suivre{% endif %}
-            </button>
-          </form>
-        </div>
+        <p>{{ follower_count }} abonne(s) &middot; {{ following_count }} abonnement(s)</p>
+        {% if user_profile.bio %}
+        <div class="bio">{{ user_profile.bio }}</div>
         {% endif %}
+
+        <div class="profile-actions">
+          {% if current_user.id != user_profile.id %}
+          <button id="profile-follow-btn" data-user-id="{{ user_profile.id }}" data-following="{{ 'true' if is_following else 'false' }}">
+            {% if is_following %}Se desabonner{% else %}Suivre{% endif %}
+          </button>
+          <a href="{{ url_for('conversation', user_id=user_profile.id) }}">Message</a>
+          {% else %}
+          <a href="{{ url_for('settings') }}">Modifier le profil</a>
+          {% endif %}
+        </div>
       </div>
     </div>
 
     <div class="posts">
-      <h2>Publications</h2>
-      {% for post in user_profile.posts %}
-      <div class="post">
-        <p>{{ post.content | render_mentions }}</p>
+      <h2>Publications ({{ user_profile.posts | length }})</h2>
+      <div class="posts-grid">
+        {% for post in user_profile.posts | reverse %}
         {% if post.image_filename %}
-        <img
-          src="{{ url_for('static', filename='uploads/' + post.image_filename) }}"
-          alt="Image postée"
-        />
+        <div class="post-card">
+          <div class="post-img-wrap">
+            {% if post.image_filename.endswith('.mp4') or post.image_filename.endswith('.webm') %}
+            <video muted loop
+              onmouseenter="this.play()"
+              onmouseleave="this.pause()"
+              style="width:100%;height:100%;object-fit:cover;">
+              <source src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" />
+            </video>
+            {% else %}
+            <img
+              src="{{ url_for('static', filename='uploads/' + post.image_filename) }}"
+              alt="Post"
+            />
+            {% endif %}
+          </div>
+          {% if post.content %}
+          <div class="post-text">{{ post.content | render_mentions }}</div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="post-card text-only">
+          <div class="post-text">{{ post.content | render_mentions }}</div>
+        </div>
         {% endif %}
+        {% else %}
+        <p>Aucune publication pour l'instant.</p>
+        {% endfor %}
       </div>
-      {% else %}
-      <p>Aucune publication pour l’instant.</p>
-      {% endfor %}
     </div>
-
-    <!-- Ce lien est totalement en dehors du <form> -->
     <a class="back-link" href="{{ url_for('index') }}">🏠 Retour au Mur</a>
+    <script src="{{ url_for('static', filename='fingerprint.js') }}"></script>
+    <script>
+      var btn = document.getElementById("profile-follow-btn");
+      if (btn) {
+        btn.addEventListener("click", function () {
+          var userId = this.dataset.userId;
+          var button = this;
+          fetch("/follow/" + userId, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data.error) return;
+              button.textContent = data.is_following ? "Se desabonner" : "Suivre";
+              button.dataset.following = data.is_following;
+              var info = document.querySelector(".profile-info p");
+              if (info) {
+                info.textContent = data.follower_count + " abonne(s) \u00b7 " + info.textContent.split("\u00b7")[1];
+              }
+            });
+        });
+      }
+    </script>
   </body>
 </html>

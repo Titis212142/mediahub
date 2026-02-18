@@ -1,19 +1,22 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from datetime import datetime, timedelta
 
 db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    password = db.Column(db.String(256), nullable=False)
+    bio = db.Column(db.String(300), default='')
     is_admin = db.Column(db.Boolean, default=False)
     last_ip = db.Column(db.String(100))
-    profile_picture = db.Column(db.String(120))  # Image de profil (nom de fichier)
+    device_fingerprint = db.Column(db.String(64))
+    profile_picture = db.Column(db.String(120))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     posts = db.relationship('Post', backref='author', lazy=True)
 
-    # Système de follow
     following = db.relationship(
         'Follow',
         foreign_keys='Follow.follower_id',
@@ -32,11 +35,17 @@ class Post(db.Model):
     content = db.Column(db.Text, nullable=False)
     image_filename = db.Column(db.String(120))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    likes = db.relationship('Like', backref='post', lazy=True, cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='post', lazy=True, cascade='all, delete-orphan')
+    bookmarks = db.relationship('Bookmark', backref='post', lazy=True, cascade='all, delete-orphan')
 
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'post_id', name='unique_user_like'),
@@ -47,13 +56,82 @@ class Comment(db.Model):
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    author = db.relationship('User', backref='comments')
+
+class Follow(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    followed_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('follower_id', 'followed_id', name='unique_follow'),
+    )
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    type = db.Column(db.String(20), nullable=False)  # 'like', 'comment', 'follow', 'report'
+    source_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=True)
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id], backref='notifications')
+    source_user = db.relationship('User', foreign_keys=[source_user_id])
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
+
+class Report(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    reason = db.Column(db.String(300), nullable=False)
+    resolved = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    reporter = db.relationship('User', backref='reports')
+    post = db.relationship('Post', backref='reports')
+
+class Story(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    image_filename = db.Column(db.String(120), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    author = db.relationship('User', backref='stories')
+
+    @property
+    def is_expired(self):
+        return datetime.utcnow() > self.created_at + timedelta(hours=24)
+
+class Bookmark(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'post_id', name='unique_bookmark'),
+    )
 
 class Challenge(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, default=True)
-    created_by = db.Column(db.String(80))  # Nom du créateur (admin)
+    created_by = db.Column(db.String(80))
 
     submissions = db.relationship('Submission', backref='challenge', lazy=True)
 
@@ -79,20 +157,17 @@ class BannedIP(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ip_address = db.Column(db.String(100), unique=True, nullable=False)
 
+class BannedDevice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fingerprint = db.Column(db.String(64), unique=True, nullable=False)
+    reason = db.Column(db.String(200))
+    banned_at = db.Column(db.DateTime, server_default=db.func.now())
+
 class ModerationLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    source = db.Column(db.String(50), nullable=False)  # 'comment', 'post', etc.
+    source = db.Column(db.String(50), nullable=False)
     timestamp = db.Column(db.DateTime, server_default=db.func.now())
 
     user = db.relationship('User')
-
-class Follow(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    followed_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    __table_args__ = (
-        db.UniqueConstraint('follower_id', 'followed_id', name='unique_follow'),
-    )

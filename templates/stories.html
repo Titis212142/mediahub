@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Story de {{ story_user.username }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .header { position: fixed; top: 0; left: 0; right: 0; padding: 16px 20px; display: flex; align-items: center; gap: 12px; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
+    .header a { color: white; text-decoration: none; font-size: 24px; }
+    .header .name { font-weight: 600; }
+    .header .time { color: #aaa; font-size: 13px; }
+    .progress-bar { position: fixed; top: 0; left: 0; right: 0; display: flex; gap: 3px; padding: 6px 10px; z-index: 11; }
+    .progress-bar .seg { flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden; }
+    .progress-bar .seg .fill { height: 100%; background: white; width: 0; }
+    .progress-bar .seg.done .fill { width: 100%; }
+    .progress-bar .seg.active .fill { animation: progress 5s linear forwards; }
+    @keyframes progress { from { width: 0; } to { width: 100%; } }
+    .story-img { max-height: 90vh; max-width: 100vw; object-fit: contain; }
+    .nav-zones { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; z-index: 5; }
+    .nav-zones .prev, .nav-zones .next { flex: 1; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="progress-bar">
+    {% for s in stories %}
+    <div class="seg {% if loop.index0 < 0 %}done{% elif loop.index0 == 0 %}active{% endif %}" data-idx="{{ loop.index0 }}">
+      <div class="fill"></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="header">
+    <a href="{{ url_for('index') }}">←</a>
+    <span class="name">{{ story_user.username }}</span>
+    <span class="time" id="story-time"></span>
+  </div>
+
+  {% for s in stories %}
+  <img class="story-img" data-idx="{{ loop.index0 }}" data-time="{{ s.created_at | time_ago }}"
+       src="{{ url_for('static', filename='uploads/' + s.image_filename) }}"
+       style="{% if loop.index0 != 0 %}display:none;{% endif %}" />
+  {% endfor %}
+
+  <div class="nav-zones">
+    <div class="prev" onclick="navigate(-1)"></div>
+    <div class="next" onclick="navigate(1)"></div>
+  </div>
+
+  <script>
+    var current = 0;
+    var total = {{ stories | length }};
+    var imgs = document.querySelectorAll('.story-img');
+    var segs = document.querySelectorAll('.progress-bar .seg');
+    var timeEl = document.getElementById('story-time');
+
+    function show(idx) {
+      if (idx >= total) { window.location.href = '{{ url_for("index") }}'; return; }
+      if (idx < 0) idx = 0;
+      current = idx;
+      imgs.forEach(function(img) { img.style.display = 'none'; });
+      imgs[idx].style.display = 'block';
+      timeEl.textContent = imgs[idx].dataset.time;
+      segs.forEach(function(s, i) {
+        s.classList.remove('active', 'done');
+        if (i < idx) s.classList.add('done');
+        else if (i === idx) s.classList.add('active');
+      });
+      clearTimeout(window._storyTimer);
+      window._storyTimer = setTimeout(function() { show(current + 1); }, 5000);
+    }
+    function navigate(dir) { show(current + dir); }
+    show(0);
+  </script>
+</body>
+</html>

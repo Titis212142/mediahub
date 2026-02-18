@@ -17,17 +17,12 @@
         margin-bottom: 10px;
       }
 
-      form {
-        margin-top: 10px;
-        margin-bottom: 30px;
-      }
-
-      input[type="text"] {
-        padding: 8px;
-        font-size: 16px;
-        border-radius: 6px;
-        border: none;
-        margin-right: 10px;
+      .flash {
+        background: #6c63ff;
+        padding: 10px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
       }
 
       button {
@@ -48,6 +43,7 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 10px;
+        margin-bottom: 30px;
       }
 
       th,
@@ -72,31 +68,60 @@
       .danger-btn:hover {
         background-color: #c0392b;
       }
+
+      .warn-btn {
+        background-color: #e67e22;
+      }
+
+      .warn-btn:hover {
+        background-color: #d35400;
+      }
+
+      .success-btn {
+        background-color: #27ae60;
+      }
+
+      .success-btn:hover {
+        background-color: #1e8449;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #c9c9ff;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        color: white;
+      }
+
+      .fp-badge {
+        font-family: monospace;
+        font-size: 12px;
+        background: #44445c;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
     </style>
   </head>
   <body>
+    <a href="{{ url_for('index') }}" class="back-link">← Retour au mur</a>
     <h1>Panneau d'administration</h1>
 
-    <form method="POST" action="{{ url_for('admin_ban') }}">
-      <label for="ip">Bannir une IP :</label>
-      <input
-        type="text"
-        name="ip"
-        id="ip"
-        placeholder="Ex: 123.45.67.89"
-        required
-      />
-      <button type="submit">Bannir</button>
-    </form>
+    {% with messages = get_flashed_messages() %} {% if messages %}
+    <div class="flash">{{ messages[0] }}</div>
+    {% endif %} {% endwith %}
 
-    <h2>Liste des utilisateurs :</h2>
+    <h2>Utilisateurs</h2>
     <table>
       <thead>
         <tr>
           <th>Nom d'utilisateur</th>
-          <th>Rôle</th>
-          <th>Dernière IP</th>
-          <th>Action</th>
+          <th>Role</th>
+          <th>Derniere IP</th>
+          <th>Appareil</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -106,12 +131,25 @@
           <td>{% if user.is_admin %}Admin{% else %}Utilisateur{% endif %}</td>
           <td>{{ user.last_ip or '—' }}</td>
           <td>
+            {% if user.device_fingerprint %}
+            <span class="fp-badge">{{ user.device_fingerprint[:12] }}…</span>
+            {% else %} — {% endif %}
+          </td>
+          <td>
             {% if user.id != current_user.id %}
+            <form
+              method="POST"
+              action="{{ url_for('admin_ban_device', user_id=user.id) }}"
+              style="display: inline"
+              onsubmit="return confirm('Bannir l\'appareil de {{ user.username }} ?')"
+            >
+              <button type="submit" class="warn-btn">🚫 Bannir appareil</button>
+            </form>
             <form
               method="POST"
               action="{{ url_for('delete_user', user_id=user.id) }}"
               style="display: inline"
-              onsubmit="return confirm('Supprimer ce compte ?')"
+              onsubmit="return confirm('Supprimer le compte de {{ user.username }} ?')"
             >
               <button type="submit" class="danger-btn">🗑 Supprimer</button>
             </form>
@@ -122,13 +160,77 @@
       </tbody>
     </table>
 
-    <h2>Liste des IP bannies :</h2>
-    <ul>
-      {% for ip in banned_ips %}
-      <li>{{ ip.ip_address }}</li>
-      {% else %}
-      <li>Aucune IP bannie pour le moment.</li>
-      {% endfor %}
-    </ul>
+    <h2>Appareils bannis</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Fingerprint</th>
+          <th>Raison</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for device in banned_devices %}
+        <tr>
+          <td><span class="fp-badge">{{ device.fingerprint }}</span></td>
+          <td>{{ device.reason or '—' }}</td>
+          <td>{{ device.banned_at.strftime('%d/%m/%Y %H:%M') if device.banned_at else '—' }}</td>
+          <td>
+            <form
+              method="POST"
+              action="{{ url_for('admin_unban_device', device_id=device.id) }}"
+              style="display: inline"
+            >
+              <button type="submit" class="success-btn">Debannir</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4">Aucun appareil banni.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Signalements en attente</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Signale par</th>
+          <th>Post de</th>
+          <th>Raison</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+        <tr>
+          <td>{{ report.reporter.username }}</td>
+          <td>{{ report.post.author.username if report.post else '?' }}</td>
+          <td>{{ report.reason }}</td>
+          <td>{{ report.created_at | time_ago }}</td>
+          <td>
+            {% if report.post %}
+            <form method="POST" action="{{ url_for('delete_post', post_id=report.post.id) }}" style="display:inline" onsubmit="return confirm('Supprimer ce post ?')">
+              <button type="submit" class="danger-btn">Supprimer post</button>
+            </form>
+            {% endif %}
+            <form method="POST" action="{{ url_for('resolve_report', report_id=report.id) }}" style="display:inline">
+              <button type="submit" class="success-btn">Ignorer</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">Aucun signalement en attente.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <a href="{{ url_for('moderation_logs') }}" style="color: #c9c9ff">📋 Voir les logs de moderation</a>
+
+    <script src="{{ url_for('static', filename='fingerprint.js') }}"></script>
   </body>
 </html>

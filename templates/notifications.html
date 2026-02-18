@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Notifications – MediaHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #1e1e2f; color: #fff; padding: 30px; max-width: 700px; margin: 0 auto; }
+    h1 { margin-bottom: 20px; }
+    .notif { background: #2f2f44; padding: 14px 18px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+    .notif.unread { border-left: 3px solid #6c63ff; }
+    .notif .icon { font-size: 22px; }
+    .notif .text { flex: 1; }
+    .notif .text a { color: #c9c9ff; text-decoration: none; font-weight: bold; }
+    .notif .time { color: #888; font-size: 13px; white-space: nowrap; }
+    .empty { color: #888; text-align: center; margin-top: 40px; }
+    a.back { color: #c9c9ff; text-decoration: none; display: inline-block; margin-bottom: 20px; }
+    a.back:hover { color: white; }
+  </style>
+</head>
+<body>
+  <a href="{{ url_for('index') }}" class="back">← Retour</a>
+  <h1>Notifications</h1>
+
+  {% for n in notifs %}
+  <div class="notif {{ 'unread' if not n.read else '' }}">
+    <span class="icon">
+      {% if n.type == 'like' %}❤️{% elif n.type == 'comment' %}💬{% elif n.type == 'follow' %}👤{% elif n.type == 'message' %}✉️{% else %}🔔{% endif %}
+    </span>
+    <div class="text">
+      <a href="{{ url_for('user_profile', username=n.source_user.username) }}">{{ n.source_user.username }}</a>
+      {% if n.type == 'like' %} a aime ton post
+      {% elif n.type == 'comment' %} a commente ton post
+      {% elif n.type == 'follow' %} a commence a te suivre
+      {% elif n.type == 'message' %} t'a envoye un message
+      {% endif %}
+    </div>
+    <span class="time">{{ n.created_at | time_ago }}</span>
+  </div>
+  {% else %}
+  <p class="empty">Aucune notification.</p>
+  {% endfor %}
+
+  <script src="{{ url_for('static', filename='fingerprint.js') }}"></script>
+</body>
+</html>

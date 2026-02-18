@@ -1,0 +1,84 @@
+{% for post in posts %}
+<div class="post-card">
+  <div class="post-header">
+    <div style="display: flex; align-items: center; gap: 12px">
+      {% if post.author.profile_picture %}
+      <img src="{{ url_for('static', filename='uploads/' + post.author.profile_picture) }}" alt="PP" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
+      {% endif %}
+      <div>
+        <a href="{{ url_for('user_profile', username=post.author.username) }}" style="color: #c9c9ff; text-decoration: none; font-weight: bold;">{{ post.author.username }}</a>
+        <div style="font-size: 12px; color: #888; font-weight: normal;">{{ post.created_at | time_ago }}</div>
+        {% if post.author.id != user.id %}
+        <button class="follow-btn" data-user-id="{{ post.author.id }}" style="font-size: 12px; padding: 4px 10px; border-radius: 6px; margin-top: 3px">
+          {% if post.author.id in followed_ids %}Se desabonner{% else %}Suivre{% endif %}
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      {% if post.user_id == user.id or user.is_admin %}
+      <span class="post-tools">
+        <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline">
+          <button type="submit" title="Supprimer">🗑</button>
+        </form>
+        <a href="{{ url_for('edit_post', post_id=post.id) }}" title="Modifier">✏️</a>
+      </span>
+      {% endif %}
+      {% if post.user_id != user.id %}
+      <button class="report-btn icon-btn" data-post-id="{{ post.id }}" title="Signaler">🚩</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if post.image_filename %}
+  <div class="post-image">
+    {% if post.image_filename.endswith('.mp4') or post.image_filename.endswith('.webm') %}
+    <video controls style="width: 100%; max-height: 400px; border-radius: 8px">
+      <source src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" type="video/mp4" />
+    </video>
+    {% else %}
+    <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="Image" style="width:100%;max-height:600px;object-fit:contain;display:block;margin:auto;" />
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="post-content">{{ post.content | render_mentions }}</div>
+
+  <div class="post-actions">
+    {% set post_likes = post.likes %}
+    {% set liked_by_user = post_likes | selectattr("user_id", "equalto", user.id) | list | length > 0 %}
+    <button class="like-btn" data-post-id="{{ post.id }}" data-liked="{{ 'true' if liked_by_user else 'false' }}" style="background:none;border:none;color:#c9c9ff;font-size:18px;cursor:pointer;">
+      {% if liked_by_user %} ❤️ {% else %} 🤍 {% endif %}
+    </button>
+    <span class="like-count" data-post-id="{{ post.id }}">{{ post_likes | length }} likes</span>
+
+    <button class="bookmark-btn" data-post-id="{{ post.id }}" style="background:none;border:none;color:#c9c9ff;font-size:18px;cursor:pointer;margin-left:auto;">
+      {% if post.id in bookmark_ids %}🔖{% else %}🏷️{% endif %}
+    </button>
+  </div>
+
+  <div class="comments">
+    <div class="comments-list" data-post-id="{{ post.id }}">
+      {% for comment in post.comments %}
+      <div class="comment" id="comment-{{ comment.id }}">
+        <strong>
+          {% if comment.user_id == user.id %}Moi{% else %}{{ comment.author.username }}{% endif %}
+        </strong>
+        : {{ comment.content | render_mentions }}
+        <span style="font-size:12px;color:#888;margin-left:6px;">{{ comment.created_at | time_ago }}</span>
+        {% if comment.user_id == user.id %}
+        <span class="tools">
+          <button class="icon-btn delete-comment-btn" data-comment-id="{{ comment.id }}" title="Supprimer">🗑</button>
+          <a href="{{ url_for('edit_comment', comment_id=comment.id) }}" class="icon-btn" title="Modifier">✏️</a>
+        </span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <form class="comment-form ajax-comment-form" data-post-id="{{ post.id }}">
+      <textarea name="comment" placeholder="Ajouter un commentaire..." required></textarea>
+      <button type="submit">Commenter</button>
+    </form>
+  </div>
+</div>
+{% endfor %}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parametres – MediaHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #1e1e2f; color: #fff; padding: 30px; max-width: 600px; margin: 0 auto; }
+    h1 { margin-bottom: 30px; }
+    h2 { margin-top: 30px; color: #c9c9ff; font-size: 18px; }
+    .card { background: #2f2f44; padding: 24px; border-radius: 12px; margin-bottom: 20px; }
+    input, textarea { width: 100%; padding: 12px; margin: 8px 0 16px; border: none; border-radius: 8px; background: #44445c; color: #fff; font-size: 15px; box-sizing: border-box; }
+    textarea { resize: vertical; min-height: 80px; }
+    input:focus, textarea:focus { outline: 2px solid #6c63ff; }
+    button { background: #6c63ff; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
+    button:hover { background: #5751d9; }
+    .flash { background: #6c63ff; padding: 10px 16px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #6c63ff; }
+    a { color: #c9c9ff; text-decoration: none; }
+    a:hover { color: white; }
+    label { font-size: 14px; color: #ccc; }
+  </style>
+</head>
+<body>
+  <a href="{{ url_for('index') }}">← Retour</a>
+  <h1>Parametres</h1>
+
+  {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}{% endwith %}
+
+  <div class="card">
+    <h2>Profil</h2>
+    <form method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="profile" />
+      {% if current_user.profile_picture %}
+      <img src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) }}" class="preview" />
+      {% endif %}
+      <label>Photo de profil</label>
+      <input type="file" name="profile_picture" accept="image/*" />
+      <label>Bio (300 caracteres max)</label>
+      <textarea name="bio" maxlength="300" placeholder="Parle de toi...">{{ current_user.bio or '' }}</textarea>
+      <button type="submit">Enregistrer</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Changer le mot de passe</h2>
+    <form method="POST">
+      <input type="hidden" name="action" value="password" />
+      <label>Ancien mot de passe</label>
+      <input type="password" name="old_password" required />
+      <label>Nouveau mot de passe</label>
+      <input type="password" name="new_password" required />
+      <label>Confirmer</label>
+      <input type="password" name="confirm_password" required />
+      <button type="submit">Changer</button>
+    </form>
+  </div>
+
+  <script src="{{ url_for('static', filename='fingerprint.js') }}"></script>
+</body>
+</html>
