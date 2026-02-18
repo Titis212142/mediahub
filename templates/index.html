@@ -87,7 +87,6 @@
       <a href="{{ url_for('user_profile', username=user.username) }}">👤 Mon profil</a>
       <a href="{{ url_for('notifications') }}">🔔 Notifs {% if unread_notifs > 0 %}<span class="badge">{{ unread_notifs }}</span>{% endif %}</a>
       <a href="{{ url_for('messages_list') }}">✉️ Messages {% if unread_msgs > 0 %}<span class="badge">{{ unread_msgs }}</span>{% endif %}</a>
-      <a href="{{ url_for('bookmarks') }}">🔖 Favoris</a>
       <a href="{{ url_for('settings') }}">⚙️ Parametres</a>
       {% if user.is_admin %}
       <a href="{{ url_for('admin_panel') }}">🛡️ Admin</a>
@@ -184,16 +183,6 @@
       });
     });
 
-    (parent || document).querySelectorAll('.bookmark-btn').forEach(function(btn) {
-      if (btn._bound) return; btn._bound = true;
-      btn.addEventListener('click', function() {
-        var postId = this.dataset.postId, button = this;
-        fetch('/bookmark/' + postId, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-          .then(function(r) { return r.json(); }).then(function(data) {
-            button.textContent = data.saved ? '🔖' : '🏷️';
-          });
-      });
-    });
 
     (parent || document).querySelectorAll('.report-btn').forEach(function(btn) {
       if (btn._bound) return; btn._bound = true;

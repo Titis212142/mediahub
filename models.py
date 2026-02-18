@@ -39,7 +39,6 @@ class Post(db.Model):
 
     likes = db.relationship('Like', backref='post', lazy=True, cascade='all, delete-orphan')
     comments = db.relationship('Comment', backref='post', lazy=True, cascade='all, delete-orphan')
-    bookmarks = db.relationship('Bookmark', backref='post', lazy=True, cascade='all, delete-orphan')
 
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -115,16 +114,6 @@ class Story(db.Model):
     @property
     def is_expired(self):
         return datetime.utcnow() > self.created_at + timedelta(hours=24)
-
-class Bookmark(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'post_id', name='unique_bookmark'),
-    )
 
 class Challenge(db.Model):
     id = db.Column(db.Integer, primary_key=True)

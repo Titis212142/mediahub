@@ -8,7 +8,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta, datetime
 from models import (
     db, User, Post, Like, Comment, Follow, Notification, Message,
-    Report, Story, Bookmark, Challenge, Submission, Vote,
+    Report, Story, Challenge, Submission, Vote,
     BannedIP, BannedDevice, ModerationLog
 )
 import re
@@ -264,7 +264,6 @@ def delete_user(user_id):
     Message.query.filter_by(sender_id=user_id).delete()
     Message.query.filter_by(receiver_id=user_id).delete()
     Report.query.filter_by(reporter_id=user_id).delete()
-    Bookmark.query.filter_by(user_id=user_id).delete()
     Story.query.filter_by(user_id=user_id).delete()
     ModerationLog.query.filter_by(user_id=user_id).delete()
     db.session.delete(user_to_delete)
@@ -338,16 +337,14 @@ def index():
         User.id.in_(followed_ids + [current_user.id])
     ).distinct().all()
 
-    bookmark_ids = [b.post_id for b in Bookmark.query.filter_by(user_id=current_user.id).all()]
-
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         html = render_template('_posts.html', user=current_user, posts=posts,
-                               followed_ids=followed_ids, bookmark_ids=bookmark_ids)
+                               followed_ids=followed_ids)
         return jsonify(html=html, has_next=has_next, page=page)
 
     return render_template('index.html', user=current_user, posts=posts,
                            followed_ids=followed_ids, has_next=has_next, page=page,
-                           stories_users=stories_users, bookmark_ids=bookmark_ids)
+                           stories_users=stories_users)
 
 @app.route('/post/delete/<int:post_id>', methods=['POST'])
 @login_required
@@ -457,31 +454,6 @@ def delete_comment(comment_id):
             return jsonify(ok=True)
     return redirect(url_for('index'))
 
-# =============================================
-# BOOKMARKS
-# =============================================
-
-@app.route('/bookmark/<int:post_id>', methods=['POST'])
-@login_required
-def toggle_bookmark(post_id):
-    existing = Bookmark.query.filter_by(user_id=current_user.id, post_id=post_id).first()
-    if existing:
-        db.session.delete(existing)
-        saved = False
-    else:
-        db.session.add(Bookmark(user_id=current_user.id, post_id=post_id))
-        saved = True
-    db.session.commit()
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify(saved=saved)
-    return redirect(url_for('index'))
-
-@app.route('/bookmarks')
-@login_required
-def bookmarks():
-    bookmark_list = Bookmark.query.filter_by(user_id=current_user.id).order_by(Bookmark.created_at.desc()).all()
-    posts = [b.post for b in bookmark_list if b.post]
-    return render_template('bookmarks.html', posts=posts)
 
 # =============================================
 # REPORT
