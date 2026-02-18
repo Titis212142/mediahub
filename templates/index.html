@@ -131,11 +131,11 @@
     </div>
 
     <!-- Post form -->
-    <form class="post-form" method="POST" enctype="multipart/form-data">
+    <form class="post-form" id="post-form" method="POST" enctype="multipart/form-data">
       <textarea name="content" placeholder="Exprime-toi ici..." required></textarea>
       <div class="form-row">
         <input type="file" name="image" accept="image/*,video/mp4,video/webm,image/webp" />
-        <button type="submit">Publier</button>
+        <button type="submit" id="post-btn">Publier</button>
       </div>
     </form>
 
@@ -237,6 +237,58 @@
   }
 
   attachHandlers();
+
+  // Track newest post ID for polling
+  var newestPostId = 0;
+  (function() {
+    var first = document.querySelector('.post-card');
+    if (first) {
+      var btn = first.querySelector('.like-btn');
+      if (btn) newestPostId = parseInt(btn.dataset.postId) || 0;
+    }
+  })();
+
+  // AJAX post form submission
+  var postForm = document.getElementById('post-form');
+  postForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('post-btn');
+    btn.disabled = true; btn.textContent = '...';
+    var formData = new FormData(postForm);
+    fetch('/', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) { alert(data.error); }
+        else {
+          postForm.querySelector('textarea').value = '';
+          postForm.querySelector('input[type="file"]').value = '';
+          pollNewPosts();
+        }
+        btn.disabled = false; btn.textContent = 'Publier';
+      })
+      .catch(function() { btn.disabled = false; btn.textContent = 'Publier'; });
+  });
+
+  // Poll for new posts
+  function pollNewPosts() {
+    if (newestPostId === 0) {
+      var first = document.querySelector('.post-card .like-btn');
+      if (first) newestPostId = parseInt(first.dataset.postId) || 0;
+    }
+    fetch('/api/new-posts?after=' + newestPostId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r) { return r.json(); }).then(function(data) {
+        if (data.count > 0 && data.html) {
+          var container = document.getElementById('posts-container');
+          var temp = document.createElement('div');
+          temp.innerHTML = data.html;
+          container.insertBefore(temp, container.firstChild);
+          attachHandlers(temp);
+          var newBtn = temp.querySelector('.like-btn');
+          if (newBtn) newestPostId = parseInt(newBtn.dataset.postId) || newestPostId;
+        }
+      });
+  }
+  setInterval(pollNewPosts, 10000);
 
   // Infinite scroll
   var currentPage = {{ page }};

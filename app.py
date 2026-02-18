@@ -300,6 +300,8 @@ def index():
     if request.method == 'POST':
         content = request.form.get('content')
         if contains_banned_words(content):
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify(error="Votre publication contient des mots inappropries."), 400
             flash("Votre publication contient des mots inappropries.")
             log_violation(current_user.id, content, "post")
             return redirect(url_for('index'))
@@ -307,6 +309,8 @@ def index():
         post = Post(content=content, image_filename=filename, author=current_user)
         db.session.add(post)
         db.session.commit()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(ok=True, post_id=post.id)
         return redirect(url_for('index'))
 
     page = request.args.get('page', 1, type=int)
@@ -345,6 +349,20 @@ def index():
     return render_template('index.html', user=current_user, posts=posts,
                            followed_ids=followed_ids, has_next=has_next, page=page,
                            stories_users=stories_users)
+
+@app.route('/api/new-posts')
+@login_required
+def api_new_posts():
+    after_id = request.args.get('after', 0, type=int)
+    if after_id == 0:
+        return jsonify(html='', count=0)
+    followed_ids = [f.followed_id for f in current_user.following.all()]
+    new_posts = Post.query.filter(Post.id > after_id).order_by(Post.created_at.desc()).all()
+    if not new_posts:
+        return jsonify(html='', count=0)
+    html = render_template('_posts.html', user=current_user, posts=new_posts,
+                           followed_ids=followed_ids)
+    return jsonify(html=html, count=len(new_posts))
 
 @app.route('/post/delete/<int:post_id>', methods=['POST'])
 @login_required
